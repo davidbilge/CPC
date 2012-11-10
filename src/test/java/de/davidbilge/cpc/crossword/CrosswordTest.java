@@ -38,6 +38,8 @@ public class CrosswordTest {
 
 		String wordAcross = c.getWord(0, 0, Direction.ACROSS);
 		Assert.assertEquals("CAN", wordAcross);
+		wordAcross = c.getWord(1, 0, Direction.ACROSS);
+		Assert.assertEquals("AN", wordAcross);
 		String wordDown = c.getWord(0, 0, Direction.DOWN);
 		Assert.assertEquals("C..", wordDown);
 	}
@@ -59,6 +61,15 @@ public class CrosswordTest {
 
 		Assert.assertTrue(c.validEntry("ZEN", 3, 0, Direction.DOWN));
 		Assert.assertFalse(c.validEntry("ZEN", 3, 0, Direction.ACROSS));
+	}
+
+	@Test
+	public void testPutWord() {
+		Crossword c = createDemoCrossword();
+
+		c.putWord("AD", 1, 1, Direction.DOWN, false);
+		Assert.assertEquals(c.getCell(1, 1).getContent(), Character.valueOf('A'));
+		Assert.assertEquals(c.getCell(1, 2).getContent(), Character.valueOf('D'));
 	}
 
 	@Test

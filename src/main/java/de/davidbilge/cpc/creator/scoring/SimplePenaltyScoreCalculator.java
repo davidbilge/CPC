@@ -21,9 +21,9 @@ public class SimplePenaltyScoreCalculator implements ScoreCalculator {
 				score += UNACCESSIBLE_CELL_PENALTY;
 			}
 
-			// if (cell.getContent().equals(Cell.EMPTY_CHARACTER)) {
-			// score += EMPTY_CELL_PENALTY;
-			// }
+			if (cell.getContent().equals(Cell.EMPTY_CHARACTER)) {
+				score += EMPTY_CELL_PENALTY;
+			}
 
 			if (cell.isBarrierBottom()) {
 				score += BARRIER_PENALTY;

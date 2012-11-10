@@ -28,6 +28,12 @@ public class Crossword implements Iterable<Cell> {
 		this.height = original.height;
 
 		this.cells = ArrayTable.create(original.cells);
+
+		for (int x = 0; x < width; ++x) {
+			for (int y = 0; y < height; ++y) {
+				this.setCell(x, y, new Cell(original.getCell(x, y)));
+			}
+		}
 	}
 
 	public Crossword(int width, int height) {
@@ -131,19 +137,22 @@ public class Crossword implements Iterable<Cell> {
 		return word;
 	}
 
-	public UndoOperation putWord(final String word, int x, int y, final Direction direction, boolean forceInsert) {
+	public UndoOperation putWord(final String word, final int x, final int y, final Direction direction, boolean forceInsert) {
 		if (!forceInsert && !validEntry(word, x, y, direction)) {
 			return new NoopUndoOperation();
 		}
 
 		final List<UndoOperation> undoOperations = new ArrayList<>();
 
+		final int initialOffset = direction == Direction.ACROSS ? x : y;
+
 		iterateCells(x, y, direction, new CellHandler() {
 
 			@Override
 			public void handleCell(Cell cell, int offset, int currentX, int currentY) {
-				if (offset < word.length()) {
-					if (offset == word.length() - 1) {
+				int wordOffset = offset - initialOffset;
+				if (wordOffset < word.length()) {
+					if (wordOffset == word.length() - 1) {
 						undoOperations.add(new CellUpdateUndoOperation(currentX, currentY, cell));
 
 						if (direction == Direction.ACROSS) {
@@ -153,7 +162,7 @@ public class Crossword implements Iterable<Cell> {
 						}
 					}
 
-					undoOperations.add(setCell(currentX, currentY, word.charAt(offset)));
+					undoOperations.add(setCell(currentX, currentY, word.charAt(wordOffset)));
 				}
 			}
 		});
@@ -174,44 +183,28 @@ public class Crossword implements Iterable<Cell> {
 	}
 
 	public Position findStartOfFirstIncompleteWord(Direction direction) {
-		Position pivotCell = findFirstEmptyCell(direction);
-
-		// Scan back
-		Map<Integer, Cell> container;
-		int containerOffset;
-
 		if (direction == Direction.ACROSS) {
-			container = cells.row(pivotCell.y);
-			containerOffset = pivotCell.x;
-		} else {
-			container = cells.column(pivotCell.x);
-			containerOffset = pivotCell.y;
-		}
-
-		if (containerOffset == 0) {
-			return pivotCell;
-		}
-
-		int startOffset = containerOffset;
-		while (startOffset > 0) {
-			Cell previousCell = container.get(startOffset - 1);
-
-			if ((direction == Direction.ACROSS && previousCell.isBarrierRight()) || (direction == Direction.DOWN && previousCell.isBarrierBottom())) {
-				break;
+			for (int y = 0; y < getHeight(); ++y) {
+				for (int x = 0; x < getWidth(); ++x) {
+					String word = getWord(x, y, direction);
+					if (word.length() > 1 && StringUtils.contains(word, '.')) {
+						return new Position(x, y);
+					}
+				}
 			}
-
-			--startOffset;
-		}
-
-		Position startPos;
-		if (direction == Direction.ACROSS) {
-			startPos = new Position(startOffset, pivotCell.y);
 		} else {
-			startPos = new Position(pivotCell.x, startOffset);
+			for (int x = 0; x < getWidth(); ++x) {
+				for (int y = 0; y < getHeight(); ++y) {
+					String word = getWord(x, y, direction);
+					if (word.length() > 1 && StringUtils.contains(word, '.')) {
+						return new Position(x, y);
+					}
+				}
+			}
 		}
 
-		return startPos;
-
+		// Apparently, there are no incomplete words any more!
+		return null;
 	}
 
 	public Position findFirstEmptyCell(Direction direction) {
@@ -261,6 +254,10 @@ public class Crossword implements Iterable<Cell> {
 			if ((direction == Direction.ACROSS && cell.isBarrierRight()) || (direction == Direction.DOWN && cell.isBarrierBottom())) {
 				break;
 			}
+
+			if (i < container.size() - 1 && !container.get(i + 1).isAccessible()) {
+				break;
+			}
 		}
 	}
 
@@ -287,7 +284,7 @@ public class Crossword implements Iterable<Cell> {
 			for (int x = 0; x < width; ++x) {
 				Cell cell = getCell(x, y);
 
-				sb.append(cell.getContent());
+				sb.append(cell.isAccessible() ? cell.getContent() : '#');
 				sb.append(cell.isBarrierRight() || x == width - 1 ? '|' : ' ');
 			}
 

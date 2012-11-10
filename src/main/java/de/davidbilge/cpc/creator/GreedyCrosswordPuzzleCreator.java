@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.davidbilge.cpc.CPCException;
 import de.davidbilge.cpc.creator.scoring.ScoreCalculator;
 import de.davidbilge.cpc.crossword.Crossword;
@@ -15,7 +18,9 @@ import de.davidbilge.cpc.crossword.undo.UndoOperation;
 import de.davidbilge.cpc.dictionary.Dictionary;
 
 public class GreedyCrosswordPuzzleCreator implements CrosswordPuzzleCreator {
-	private static final int MAX_EVALUATED_ALTERNATIVES = 10;
+	private static final Logger LOG = LoggerFactory.getLogger(GreedyCrosswordPuzzleCreator.class);
+
+	private static final int MAX_EVALUATED_ALTERNATIVES = 5;
 
 	private final ScoreCalculator scoreCalculator;
 
@@ -26,6 +31,10 @@ public class GreedyCrosswordPuzzleCreator implements CrosswordPuzzleCreator {
 
 	@Override
 	public FillResult fillCrossword(Crossword initial, Dictionary dictionary, Direction initialDirection) {
+		return fillCrossword(initial, dictionary, initialDirection, 0f, 1f);
+	}
+
+	private FillResult fillCrossword(Crossword initial, Dictionary dictionary, Direction initialDirection, float completion, float scale) {
 		Position pivotCell = initial.findStartOfFirstIncompleteWord(initialDirection);
 
 		if (pivotCell == null) {
@@ -36,11 +45,7 @@ public class GreedyCrosswordPuzzleCreator implements CrosswordPuzzleCreator {
 
 		List<String> dictionarySubset = dictionary.filter(Crossword.regexify(currentContent));
 		if (dictionarySubset.isEmpty()) {
-			// initialDirection = switchDirection(initialDirection);
-			// currentContent = initial.getWord(pivotCell.x, pivotCell.y,
-			// initialDirection);
-			// dictionarySubset =
-			// dictionary.filter(Crossword.regexify(currentContent));
+			// initial = new Crossword(initial);
 
 			if (dictionarySubset.isEmpty()) {
 				// Can't proceed; back up!
@@ -68,7 +73,7 @@ public class GreedyCrosswordPuzzleCreator implements CrosswordPuzzleCreator {
 
 			Crossword copy = new Crossword(initial);
 			UndoOperation wordInsertionUndoOperation = copy.putWord(word, pivotCell.x, pivotCell.y, initialDirection, false);
-			FillResult fillResult = fillCrossword(copy, dictionary, switchDirection(initialDirection));
+			FillResult fillResult = fillCrossword(copy, dictionary, switchDirection(initialDirection), completion, scale * 0.1f);
 
 			int currentScore = scoreCalculator.calculateScore(copy);
 
@@ -76,6 +81,11 @@ public class GreedyCrosswordPuzzleCreator implements CrosswordPuzzleCreator {
 				undo = new MetaUndoOperation(wordInsertionUndoOperation, fillResult.undoOperation);
 				bestScore = currentScore;
 				bestCopy = fillResult.crossword;
+			}
+
+			completion += (1f / MAX_EVALUATED_ALTERNATIVES) * scale;
+			if (scale > 0.00001f) {
+				LOG.debug("Completion: " + (completion * 100) + "%");
 			}
 		}
 

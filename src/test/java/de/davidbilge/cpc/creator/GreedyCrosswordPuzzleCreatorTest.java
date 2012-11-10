@@ -25,8 +25,8 @@ public class GreedyCrosswordPuzzleCreatorTest extends AbstractJUnit4SpringContex
 
 	@Test
 	public void testCreation() {
-		FillResult crossword = greedyCrosswordPuzzleCreator.fillCrossword(CrosswordFactory.createEmptyCrossword(10, 5), dictionary, Direction.ACROSS);
+		FillResult fillResult = greedyCrosswordPuzzleCreator.fillCrossword(CrosswordFactory.createEmptyCrossword(10, 5), dictionary, Direction.ACROSS);
 
-		LOG.debug("Resulting crossword:\n\n" + crossword + "\n");
+		LOG.debug("Resulting crossword:\n\n" + fillResult.crossword.toString() + "\n");
 	}
 }
