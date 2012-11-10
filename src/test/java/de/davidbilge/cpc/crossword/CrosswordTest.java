@@ -11,9 +11,9 @@ public class CrosswordTest {
 		Crossword c = new Crossword(4, 3);
 
 		String wordAcross = c.getWord(0, 0, Direction.ACROSS);
-		Assert.assertEquals("    ", wordAcross);
+		Assert.assertEquals("....", wordAcross);
 		String wordDown = c.getWord(0, 0, Direction.DOWN);
-		Assert.assertEquals("   ", wordDown);
+		Assert.assertEquals("...", wordDown);
 	}
 
 	@Test
@@ -27,20 +27,36 @@ public class CrosswordTest {
 		String wordAcross = c.getWord(0, 0, Direction.ACROSS);
 		Assert.assertEquals("ABCD", wordAcross);
 		String wordDown = c.getWord(0, 0, Direction.DOWN);
-		Assert.assertEquals("A  ", wordDown);
+		Assert.assertEquals("A..", wordDown);
 	}
 
 	@Test
 	public void testGetWordWithBarrier() {
+		Crossword c = createDemoCrossword();
+
+		String wordAcross = c.getWord(0, 0, Direction.ACROSS);
+		Assert.assertEquals("CAN", wordAcross);
+		String wordDown = c.getWord(0, 0, Direction.DOWN);
+		Assert.assertEquals("C..", wordDown);
+	}
+
+	private Crossword createDemoCrossword() {
 		Crossword c = new Crossword(4, 3);
+
 		c.setCell(0, 0, 'C');
 		c.setCell(1, 0, 'A');
 		c.setCell(2, 0, new Cell('N', false, true));
 		c.setCell(3, 0, 'Z');
 
-		String wordAcross = c.getWord(0, 0, Direction.ACROSS);
-		Assert.assertEquals("CAN", wordAcross);
-		String wordDown = c.getWord(0, 0, Direction.DOWN);
-		Assert.assertEquals("C  ", wordDown);
+		return c;
 	}
+
+	@Test
+	public void testIsValidEntry() {
+		Crossword c = createDemoCrossword();
+
+		Assert.assertTrue(c.validEntry("ZEN", 3, 0, Direction.DOWN));
+		Assert.assertFalse(c.validEntry("ZEN", 3, 0, Direction.ACROSS));
+	}
+
 }
