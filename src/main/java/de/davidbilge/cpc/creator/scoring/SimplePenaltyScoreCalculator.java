@@ -1,8 +1,11 @@
 package de.davidbilge.cpc.creator.scoring;
 
+import org.springframework.stereotype.Component;
+
 import de.davidbilge.cpc.crossword.Cell;
 import de.davidbilge.cpc.crossword.Crossword;
 
+@Component
 public class SimplePenaltyScoreCalculator implements ScoreCalculator {
 
 	private static final int UNACCESSIBLE_CELL_PENALTY = 100;
@@ -18,7 +21,7 @@ public class SimplePenaltyScoreCalculator implements ScoreCalculator {
 				score += UNACCESSIBLE_CELL_PENALTY;
 			}
 
-			// if (cell.getContent().equals('.')) {
+			// if (cell.getContent().equals(Cell.EMPTY_CHARACTER)) {
 			// score += EMPTY_CELL_PENALTY;
 			// }
 

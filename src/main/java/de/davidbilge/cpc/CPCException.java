@@ -7,8 +7,8 @@ public class CPCException extends RuntimeException {
 		super(message, cause);
 	}
 
-	public CPCException(Throwable cause) {
-		super(cause);
+	public CPCException(String message) {
+		super(message);
 	}
 
 }

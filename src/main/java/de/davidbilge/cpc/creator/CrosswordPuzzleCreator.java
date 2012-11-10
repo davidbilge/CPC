@@ -1,11 +1,21 @@
 package de.davidbilge.cpc.creator;
 
-import java.util.List;
-
 import de.davidbilge.cpc.crossword.Crossword;
+import de.davidbilge.cpc.crossword.Direction;
 import de.davidbilge.cpc.crossword.undo.UndoOperation;
 import de.davidbilge.cpc.dictionary.Dictionary;
 
 public interface CrosswordPuzzleCreator {
-	List<UndoOperation> fillCrossword(Crossword initial, Dictionary dictionary);
+
+	FillResult fillCrossword(Crossword initial, Dictionary dictionary, Direction initialDirection);
+
+	public static class FillResult {
+		public final Crossword crossword;
+		public final UndoOperation undoOperation;
+
+		public FillResult(Crossword crossword, UndoOperation undoOperation) {
+			this.crossword = crossword;
+			this.undoOperation = undoOperation;
+		}
+	}
 }

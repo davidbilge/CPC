@@ -1,6 +1,6 @@
 package de.davidbilge.cpc.dictionary;
 
-import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.regex.Pattern;
@@ -11,11 +11,11 @@ import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 
 @Component
-public class Dictionary {
+public class Dictionary implements Iterable<String> {
 
 	@Resource
 	private WordListProvider wordListProvider;
@@ -33,14 +33,19 @@ public class Dictionary {
 		return Iterables.get(words, rnd.nextInt(words.size()));
 	}
 
-	public Collection<String> filter(String regex) {
+	public List<String> filter(String regex) {
 		final Pattern pattern = Pattern.compile(regex);
 
-		return Collections2.filter(words, new Predicate<String>() {
+		return Lists.newArrayList(Iterables.filter(words, new Predicate<String>() {
 			@Override
 			public boolean apply(String word) {
 				return pattern.matcher(word).matches();
 			}
-		});
+		}));
+	}
+
+	@Override
+	public Iterator<String> iterator() {
+		return words.iterator();
 	}
 }

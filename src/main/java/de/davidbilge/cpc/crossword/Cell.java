@@ -1,9 +1,18 @@
 package de.davidbilge.cpc.crossword;
 
 public class Cell {
+	public static final char EMPTY_CHARACTER = '.';
+
 	private Character content;
 	private boolean barrierBottom = false, barrierRight = false;
 	private boolean accessible = true;
+
+	public Cell(Cell copyOf) {
+		this.content = copyOf.content;
+		this.barrierBottom = copyOf.barrierBottom;
+		this.barrierRight = copyOf.barrierRight;
+		this.accessible = copyOf.accessible;
+	}
 
 	public Cell(Character content) {
 		this.content = content;

@@ -1,5 +1,7 @@
 package de.davidbilge.cpc.crossword;
 
+import java.util.regex.Pattern;
+
 import junit.framework.Assert;
 
 import org.junit.Test;
@@ -57,6 +59,19 @@ public class CrosswordTest {
 
 		Assert.assertTrue(c.validEntry("ZEN", 3, 0, Direction.DOWN));
 		Assert.assertFalse(c.validEntry("ZEN", 3, 0, Direction.ACROSS));
+	}
+
+	@Test
+	public void testRegexify() {
+		String regexified = Crossword.regexify("t.st");
+		Assert.assertEquals(regexified, "t.st");
+
+		regexified = Crossword.regexify("t.st...");
+		Assert.assertEquals(regexified, "t.st.{0,3}");
+
+		Assert.assertTrue(Pattern.matches(regexified, "testing"));
+		Assert.assertTrue(Pattern.matches(regexified, "test"));
+		Assert.assertFalse(Pattern.matches(regexified, "testingX"));
 	}
 
 }

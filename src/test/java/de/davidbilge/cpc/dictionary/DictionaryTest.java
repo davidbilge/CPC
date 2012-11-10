@@ -1,7 +1,5 @@
 package de.davidbilge.cpc.dictionary;
 
-import java.util.Collection;
-
 import javax.annotation.Resource;
 
 import junit.framework.Assert;
@@ -30,10 +28,10 @@ public class DictionaryTest extends AbstractJUnit4SpringContextTests {
 
 	@Test
 	public void testFilter() {
-		Collection<String> filtered = dictionary.filter("...e");
+		Iterable<String> filtered = dictionary.filter("...e");
 
 		Assert.assertNotNull(filtered);
-		Assert.assertFalse(filtered.size() == 0);
+		Assert.assertTrue(filtered.iterator().hasNext());
 
 		boolean conditionsSatisfied = Iterables.all(filtered, new Predicate<String>() {
 			@Override

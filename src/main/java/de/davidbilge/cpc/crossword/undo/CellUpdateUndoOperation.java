@@ -10,7 +10,7 @@ public class CellUpdateUndoOperation implements UndoOperation {
 	public CellUpdateUndoOperation(int posX, int posY, Cell oldCell) {
 		this.posX = posX;
 		this.posY = posY;
-		this.oldCell = oldCell;
+		this.oldCell = new Cell(oldCell);
 	}
 
 	@Override
