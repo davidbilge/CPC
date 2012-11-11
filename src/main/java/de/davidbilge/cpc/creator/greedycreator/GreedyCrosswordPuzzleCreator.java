@@ -2,6 +2,7 @@ package de.davidbilge.cpc.creator.greedycreator;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -27,9 +28,10 @@ public class GreedyCrosswordPuzzleCreator implements CrosswordPuzzleCreator {
 	private static final Logger LOG = LoggerFactory.getLogger(GreedyCrosswordPuzzleCreator.class);
 
 	private static final int MAX_EVALUATED_ALTERNATIVES = 2;
+	private static final int SCORE_THRESHOLD = 1000;
 
-	private final ScoreCalculator scoreCalculator;
-	private final FillWordPicker fillWordPicker;
+	final ScoreCalculator scoreCalculator;
+	final FillWordPicker fillWordPicker;
 
 	public GreedyCrosswordPuzzleCreator(ScoreCalculator scoreCalculator, FillWordPicker fillWordPicker) {
 		this.scoreCalculator = scoreCalculator;
@@ -42,6 +44,11 @@ public class GreedyCrosswordPuzzleCreator implements CrosswordPuzzleCreator {
 	}
 
 	private FillResult fillCrossword(Crossword initial, Dictionary dictionary, final Direction initialDirection, float completion, float scale) {
+		if (scoreCalculator.calculateScore(initial) > SCORE_THRESHOLD) {
+			// Cancel early because this is not worth it anymore
+			return disableBlankCells(initial, initialDirection);
+		}
+
 		List<String> dictionarySubset = ImmutableList.of();
 		String currentContent = null;
 		Position pivotCell = null;
@@ -53,7 +60,7 @@ public class GreedyCrosswordPuzzleCreator implements CrosswordPuzzleCreator {
 
 			if (vector == null || vector.position == null || vector.direction == null) {
 				// No word exists that could be filled.
-				return new FillResult(initial, new NoopUndoOperation());
+				return disableBlankCells(initial, currentDirection);
 			}
 
 			pivotCell = vector.position;
@@ -63,16 +70,7 @@ public class GreedyCrosswordPuzzleCreator implements CrosswordPuzzleCreator {
 			if (currentContent.length() <= 1) {
 				// Apparently, all that is left are length-one-words. We don't
 				// want those, so fill those cells with "forbidden" flags.
-				Crossword finalCrossword = new Crossword(initial);
-
-				List<UndoOperation> undos = new ArrayList<>();
-
-				Position emptyCell;
-				while ((emptyCell = finalCrossword.findFirstEmptyCell(currentDirection)) != null) {
-					undos.add(finalCrossword.setCellAccessible(emptyCell.x, emptyCell.y, false));
-				}
-
-				return new FillResult(finalCrossword, new MetaUndoOperation(undos));
+				return disableBlankCells(initial, currentDirection);
 			}
 
 			dictionarySubset = dictionary.filter(Crossword.regexify(currentContent));
@@ -91,6 +89,12 @@ public class GreedyCrosswordPuzzleCreator implements CrosswordPuzzleCreator {
 		}
 
 		Collections.shuffle(dictionarySubset);
+		Collections.sort(dictionarySubset, new Comparator<String>() {
+			@Override
+			public int compare(String o1, String o2) {
+				return Integer.compare(o2.length(), o1.length());
+			}
+		});
 
 		UndoOperation undo = new NoopUndoOperation();
 		int bestScore = Integer.MAX_VALUE;
@@ -101,7 +105,7 @@ public class GreedyCrosswordPuzzleCreator implements CrosswordPuzzleCreator {
 
 			Crossword copy = new Crossword(initial);
 			UndoOperation wordInsertionUndoOperation = copy.putWord(word, pivotCell.x, pivotCell.y, currentDirection, false);
-			FillResult fillResult = fillCrossword(copy, dictionary, switchDirection(currentDirection), completion, scale * 0.1f);
+			FillResult fillResult = fillCrossword(copy, dictionary, switchDirection(currentDirection), completion, scale / MAX_EVALUATED_ALTERNATIVES);
 
 			int currentScore = scoreCalculator.calculateScore(copy);
 
@@ -118,6 +122,19 @@ public class GreedyCrosswordPuzzleCreator implements CrosswordPuzzleCreator {
 		}
 
 		return new FillResult(bestCopy, undo);
+	}
+
+	private static FillResult disableBlankCells(Crossword initial, Direction currentDirection) {
+		Crossword finalCrossword = new Crossword(initial);
+
+		List<UndoOperation> undos = new ArrayList<>();
+
+		Position emptyCell;
+		while ((emptyCell = finalCrossword.findFirstEmptyCell(currentDirection)) != null) {
+			undos.add(finalCrossword.setCellAccessible(emptyCell.x, emptyCell.y, false));
+		}
+
+		return new FillResult(finalCrossword, new MetaUndoOperation(undos));
 	}
 
 	private static Direction switchDirection(Direction dir) {
