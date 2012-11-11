@@ -182,31 +182,6 @@ public class Crossword implements Iterable<Cell> {
 		undoOperation.undo(this);
 	}
 
-	public Position findStartOfFirstIncompleteWord(Direction direction) {
-		if (direction == Direction.ACROSS) {
-			for (int y = 0; y < getHeight(); ++y) {
-				for (int x = 0; x < getWidth(); ++x) {
-					String word = getWord(x, y, direction);
-					if (word.length() > 1 && StringUtils.contains(word, '.')) {
-						return new Position(x, y);
-					}
-				}
-			}
-		} else {
-			for (int x = 0; x < getWidth(); ++x) {
-				for (int y = 0; y < getHeight(); ++y) {
-					String word = getWord(x, y, direction);
-					if (word.length() > 1 && StringUtils.contains(word, '.')) {
-						return new Position(x, y);
-					}
-				}
-			}
-		}
-
-		// Apparently, there are no incomplete words any more!
-		return null;
-	}
-
 	public Position findFirstEmptyCell(Direction direction) {
 		if (direction == Direction.DOWN) {
 			for (int x = 0; x < getWidth(); ++x) {

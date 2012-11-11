@@ -11,7 +11,8 @@
 	
 	<context:component-scan base-package="de.davidbilge.cpc" />
 	
-	<bean id="greedyCrosswordPuzzleCreator" class="de.davidbilge.cpc.creator.GreedyCrosswordPuzzleCreator">
+	<bean id="greedyCrosswordPuzzleCreator" class="de.davidbilge.cpc.creator.greedycreator.GreedyCrosswordPuzzleCreator">
 		<constructor-arg ref="simplePenaltyScoreCalculator" />
+		<constructor-arg ref="firstIncompleteWordPicker" />
 	</bean>
 </beans>

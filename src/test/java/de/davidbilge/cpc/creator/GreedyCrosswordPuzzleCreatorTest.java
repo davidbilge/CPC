@@ -9,6 +9,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
 import de.davidbilge.cpc.creator.CrosswordPuzzleCreator.FillResult;
+import de.davidbilge.cpc.creator.greedycreator.GreedyCrosswordPuzzleCreator;
 import de.davidbilge.cpc.crossword.CrosswordFactory;
 import de.davidbilge.cpc.crossword.Direction;
 import de.davidbilge.cpc.dictionary.Dictionary;

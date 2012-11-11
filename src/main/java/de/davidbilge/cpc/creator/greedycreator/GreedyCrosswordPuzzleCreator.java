@@ -1,4 +1,4 @@
-package de.davidbilge.cpc.creator;
+package de.davidbilge.cpc.creator.greedycreator;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -8,10 +8,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.davidbilge.cpc.CPCException;
+import de.davidbilge.cpc.creator.CrosswordPuzzleCreator;
 import de.davidbilge.cpc.creator.scoring.ScoreCalculator;
 import de.davidbilge.cpc.crossword.Crossword;
 import de.davidbilge.cpc.crossword.Direction;
 import de.davidbilge.cpc.crossword.Position;
+import de.davidbilge.cpc.crossword.Vector;
 import de.davidbilge.cpc.crossword.undo.MetaUndoOperation;
 import de.davidbilge.cpc.crossword.undo.NoopUndoOperation;
 import de.davidbilge.cpc.crossword.undo.UndoOperation;
@@ -23,10 +25,11 @@ public class GreedyCrosswordPuzzleCreator implements CrosswordPuzzleCreator {
 	private static final int MAX_EVALUATED_ALTERNATIVES = 5;
 
 	private final ScoreCalculator scoreCalculator;
+	private final FillWordPicker fillWordPicker;
 
-	public GreedyCrosswordPuzzleCreator(ScoreCalculator scoreCalculator) {
-		super();
+	public GreedyCrosswordPuzzleCreator(ScoreCalculator scoreCalculator, FillWordPicker fillWordPicker) {
 		this.scoreCalculator = scoreCalculator;
+		this.fillWordPicker = fillWordPicker;
 	}
 
 	@Override
@@ -35,11 +38,14 @@ public class GreedyCrosswordPuzzleCreator implements CrosswordPuzzleCreator {
 	}
 
 	private FillResult fillCrossword(Crossword initial, Dictionary dictionary, Direction initialDirection, float completion, float scale) {
-		Position pivotCell = initial.findStartOfFirstIncompleteWord(initialDirection);
+		Vector vector = fillWordPicker.pickWordToFill(initial, initialDirection);
 
-		if (pivotCell == null) {
+		if (vector == null || vector.position == null || vector.direction == null) {
 			return new FillResult(initial, new NoopUndoOperation());
 		}
+
+		Position pivotCell = vector.position;
+		initialDirection = vector.direction;
 
 		String currentContent = initial.getWord(pivotCell.x, pivotCell.y, initialDirection);
 
