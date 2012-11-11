@@ -107,7 +107,7 @@ public class GreedyCrosswordPuzzleCreator implements CrosswordPuzzleCreator {
 			UndoOperation wordInsertionUndoOperation = copy.putWord(word, pivotCell.x, pivotCell.y, currentDirection, false);
 			FillResult fillResult = fillCrossword(copy, dictionary, switchDirection(currentDirection), completion, scale / MAX_EVALUATED_ALTERNATIVES);
 
-			int currentScore = scoreCalculator.calculateScore(copy);
+			int currentScore = scoreCalculator.calculateScore(fillResult.crossword);
 
 			if (currentScore <= bestScore) {
 				undo = new MetaUndoOperation(barrierInsertionUndos, wordInsertionUndoOperation, fillResult.undoOperation);
