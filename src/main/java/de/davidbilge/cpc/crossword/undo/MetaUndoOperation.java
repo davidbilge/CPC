@@ -1,8 +1,10 @@
 package de.davidbilge.cpc.crossword.undo;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 import de.davidbilge.cpc.crossword.Crossword;
 
@@ -17,9 +19,14 @@ public class MetaUndoOperation implements UndoOperation {
 		this.undoOperations = ImmutableList.copyOf(undoOperations);
 	}
 
+	public MetaUndoOperation(List<UndoOperation> undoOperations, UndoOperation... furtherUndoOperations) {
+		this.undoOperations = new ArrayList<>(undoOperations);
+		this.undoOperations.addAll(ImmutableList.copyOf(furtherUndoOperations));
+	}
+
 	@Override
 	public void undo(Crossword crossword) {
-		for (UndoOperation undoOperation : this.undoOperations) {
+		for (UndoOperation undoOperation : Lists.reverse(undoOperations)) {
 			undoOperation.undo(crossword);
 		}
 	}

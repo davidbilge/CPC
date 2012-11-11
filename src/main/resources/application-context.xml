@@ -13,6 +13,6 @@
 	
 	<bean id="greedyCrosswordPuzzleCreator" class="de.davidbilge.cpc.creator.greedycreator.GreedyCrosswordPuzzleCreator">
 		<constructor-arg ref="simplePenaltyScoreCalculator" />
-		<constructor-arg ref="firstIncompleteWordPicker" />
+		<constructor-arg ref="mostFilledWordPicker" />
 	</bean>
 </beans>

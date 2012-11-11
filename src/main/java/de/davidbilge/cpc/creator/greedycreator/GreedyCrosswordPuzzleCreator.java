@@ -7,13 +7,17 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableList;
+
 import de.davidbilge.cpc.CPCException;
 import de.davidbilge.cpc.creator.CrosswordPuzzleCreator;
 import de.davidbilge.cpc.creator.scoring.ScoreCalculator;
+import de.davidbilge.cpc.crossword.Cell;
 import de.davidbilge.cpc.crossword.Crossword;
 import de.davidbilge.cpc.crossword.Direction;
 import de.davidbilge.cpc.crossword.Position;
 import de.davidbilge.cpc.crossword.Vector;
+import de.davidbilge.cpc.crossword.undo.CellUpdateUndoOperation;
 import de.davidbilge.cpc.crossword.undo.MetaUndoOperation;
 import de.davidbilge.cpc.crossword.undo.NoopUndoOperation;
 import de.davidbilge.cpc.crossword.undo.UndoOperation;
@@ -22,7 +26,7 @@ import de.davidbilge.cpc.dictionary.Dictionary;
 public class GreedyCrosswordPuzzleCreator implements CrosswordPuzzleCreator {
 	private static final Logger LOG = LoggerFactory.getLogger(GreedyCrosswordPuzzleCreator.class);
 
-	private static final int MAX_EVALUATED_ALTERNATIVES = 5;
+	private static final int MAX_EVALUATED_ALTERNATIVES = 2;
 
 	private final ScoreCalculator scoreCalculator;
 	private final FillWordPicker fillWordPicker;
@@ -37,34 +41,52 @@ public class GreedyCrosswordPuzzleCreator implements CrosswordPuzzleCreator {
 		return fillCrossword(initial, dictionary, initialDirection, 0f, 1f);
 	}
 
-	private FillResult fillCrossword(Crossword initial, Dictionary dictionary, Direction initialDirection, float completion, float scale) {
-		Vector vector = fillWordPicker.pickWordToFill(initial, initialDirection);
+	private FillResult fillCrossword(Crossword initial, Dictionary dictionary, final Direction initialDirection, float completion, float scale) {
+		List<String> dictionarySubset = ImmutableList.of();
+		String currentContent = null;
+		Position pivotCell = null;
+		List<UndoOperation> barrierInsertionUndos = new ArrayList<>();
+		Direction currentDirection = initialDirection;
 
-		if (vector == null || vector.position == null || vector.direction == null) {
-			return new FillResult(initial, new NoopUndoOperation());
-		}
+		while (dictionarySubset.isEmpty()) {
+			Vector vector = fillWordPicker.pickWordToFill(initial, currentDirection);
 
-		Position pivotCell = vector.position;
-		initialDirection = vector.direction;
+			if (vector == null || vector.position == null || vector.direction == null) {
+				// No word exists that could be filled.
+				return new FillResult(initial, new NoopUndoOperation());
+			}
 
-		String currentContent = initial.getWord(pivotCell.x, pivotCell.y, initialDirection);
+			pivotCell = vector.position;
+			currentDirection = vector.direction;
 
-		List<String> dictionarySubset = dictionary.filter(Crossword.regexify(currentContent));
-		if (dictionarySubset.isEmpty()) {
-			// initial = new Crossword(initial);
-
-			if (dictionarySubset.isEmpty()) {
-				// Can't proceed; back up!
+			currentContent = initial.getWord(pivotCell.x, pivotCell.y, currentDirection);
+			if (currentContent.length() <= 1) {
+				// Apparently, all that is left are length-one-words. We don't
+				// want those, so fill those cells with "forbidden" flags.
 				Crossword finalCrossword = new Crossword(initial);
 
 				List<UndoOperation> undos = new ArrayList<>();
 
 				Position emptyCell;
-				while ((emptyCell = finalCrossword.findFirstEmptyCell(initialDirection)) != null) {
+				while ((emptyCell = finalCrossword.findFirstEmptyCell(currentDirection)) != null) {
 					undos.add(finalCrossword.setCellAccessible(emptyCell.x, emptyCell.y, false));
 				}
 
 				return new FillResult(finalCrossword, new MetaUndoOperation(undos));
+			}
+
+			dictionarySubset = dictionary.filter(Crossword.regexify(currentContent));
+
+			if (dictionarySubset.isEmpty()) {
+				Cell cellToUpdateWithBarrier = initial.getCell(pivotCell.x, pivotCell.y);
+
+				barrierInsertionUndos.add(new CellUpdateUndoOperation(pivotCell.x, pivotCell.y, cellToUpdateWithBarrier));
+
+				if (currentDirection == Direction.ACROSS) {
+					cellToUpdateWithBarrier.setBarrierRight(true);
+				} else {
+					cellToUpdateWithBarrier.setBarrierBottom(true);
+				}
 			}
 		}
 
@@ -78,13 +100,13 @@ public class GreedyCrosswordPuzzleCreator implements CrosswordPuzzleCreator {
 			String word = dictionarySubset.get(i);
 
 			Crossword copy = new Crossword(initial);
-			UndoOperation wordInsertionUndoOperation = copy.putWord(word, pivotCell.x, pivotCell.y, initialDirection, false);
-			FillResult fillResult = fillCrossword(copy, dictionary, switchDirection(initialDirection), completion, scale * 0.1f);
+			UndoOperation wordInsertionUndoOperation = copy.putWord(word, pivotCell.x, pivotCell.y, currentDirection, false);
+			FillResult fillResult = fillCrossword(copy, dictionary, switchDirection(currentDirection), completion, scale * 0.1f);
 
 			int currentScore = scoreCalculator.calculateScore(copy);
 
 			if (currentScore <= bestScore) {
-				undo = new MetaUndoOperation(wordInsertionUndoOperation, fillResult.undoOperation);
+				undo = new MetaUndoOperation(barrierInsertionUndos, wordInsertionUndoOperation, fillResult.undoOperation);
 				bestScore = currentScore;
 				bestCopy = fillResult.crossword;
 			}
